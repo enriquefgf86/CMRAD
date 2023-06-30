@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "serve:cmrad": "vue-cli-service serve",
-    "build:cmrad": "vue-cli-service build",
+    "build": "vue-cli-service build",
     "test:cy-cmrad": "vue-cli-service test:e2e",
     "lint": "vue-cli-service lint"
   },
