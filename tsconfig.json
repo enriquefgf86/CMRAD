@@ -5,7 +5,6 @@
     "strict": true,
     "jsx": "preserve",
     "moduleResolution": "node",
-    "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
@@ -14,7 +13,6 @@
     "baseUrl": ".",
     "types": [
       "webpack-env",
-      "jest"
     ],
     "paths": {
       "@/*": [
@@ -26,7 +24,8 @@
       "dom",
       "dom.iterable",
       "scripthost"
-    ]
+    ],
+    "resolveJsonModule": true
   },
   "include": [
     "src/**/*.ts",
@@ -34,7 +33,7 @@
     "src/**/*.vue",
     "tests/**/*.ts",
     "tests/**/*.tsx"
-  ],
+, "tests/unit/tags-text-area.spec.js"  ],
   "exclude": [
     "node_modules"
   ]
