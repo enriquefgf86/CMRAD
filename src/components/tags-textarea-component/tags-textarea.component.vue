@@ -1,55 +1,46 @@
 <template>
   <div class="textarea-component-class">
     <div>
-      <v-text-field
-        data-cy="text-field"
+      <v-textarea
+        class="textarea-component-class__textarea"
         variant="underlined"
-        v-model="tagsToSearchOrCreateString"
-        :label="textAreaLabel"
-        @input="onSearchCreateTags()"
-      ></v-text-field>
-    </div>
-
-    <div>
-      <TagsCreatorTriggererComponent
-        @tagCreated="onTagCreated"
-        :newTag="tagsToSearchOrCreateString"
-        v-if="isAvailableToCreateTag"
-        data-cy="button"
-      />
-    </div>
-    <div>
-      <v-tooltip
-        data-cy="tooltip"
-        class="textarea-component-class__tooltip"
-        v-model="canShowTooltip"
-        v-if="newTagCreated"
-        location="bottom"
-        >{{ `A new #${newTagCreated} tag was created` }}
-      </v-tooltip>
+        v-model="inputTextContent"
+        :label="inputLabelContent"
+        @input="entryDataHandler"
+        @keydown.enter="onSubmitInputText"
+      ></v-textarea>
     </div>
 
     <div>
       <v-list
-        data-cy="tags-list-suggestion"
         lines="one"
         class="textarea-component-class__list"
-        v-if="tagsToSearchOrCreateString"
+        v-if="inputTextContent"
       >
         <v-list-item
-          @click="onSelectTag(suggestion.tag)"
+          @click="onSelectTag(suggestion)"
           v-for="suggestion in suggestionOnSearchInput"
-          :key="suggestion.tag"
-          :style="{ color: suggestion.color }"
-          >{{ suggestion.tag }}</v-list-item
+          :key="suggestion"
+          :style="{ color: 'blue' }"
+          >{{ suggestion }}</v-list-item
         >
       </v-list>
     </div>
   </div>
+  <div
+    class="textarea-component-class__highlightedText"
+    v-if="isTagTextReleased"
+  >
+    <span
+      v-for="(word, index) in arrayOfTags"
+      :key="index"
+      :class="{ hashtag: isHashtag(word) }"
+      v-html="renderColoredWords(word)"
+    ></span>
+  </div>
 </template>
 
 <script lang="ts">
-import { TagCreated, TagsWithColors } from "@/interfaces/interfaces";
 import { defineComponent } from "vue";
 import { mapActions, mapGetters } from "vuex";
 
@@ -58,128 +49,132 @@ export default defineComponent({
 
   data: () => {
     return {
-      canShowTooltip: false as boolean,
-      allColorsRandom: [] as string[],
-      isATagSelected: false as boolean,
-      isTagCreatorEnabled: false as boolean,
-      newTagCreated: "" as string,
-      suggestionOnSearchInput: [] as TagsWithColors[],
-      tagsToSearchOrCreateString: "" as string,
-      textAreaLabel: "Search or Create Your Tag Here" as string,
+      isTagTextReleased: false as boolean,
+      arrayOfTags: [] as string[],
+      suggestionOnSearchInput: [] as string[],
+      inputTextContent: "" as string,
+      inputLabelContent: "Search or Create Your Tag Here" as string,
+      originalText: "" as string,
     };
   },
 
   methods: {
-    ...mapActions(["getFilteredTags"]),
+    ...mapActions(["createNewTag"]),
 
-    generateRandomColor(): string {
-      const colorCharactersConformer = "0123456789ABCDEF";
-      const color = Array.from(
-        { length: 6 },
-        () => colorCharactersConformer[Math.floor(Math.random() * 16)]
-      ).join("");
-      return `#${color}`;
+    entryDataHandler(): void {
+      const tag = this.getLastTag();
+
+      if (this._isTagExpression) {
+        this.onSearchCreateTags(tag);
+      } else {
+        this.suggestionOnSearchInput = [];
+      }
     },
 
-    getAvailableTagsWithColors(): TagsWithColors[] {
-      return this.getAvailableTags.map((tag: string, index: number) => {
-        return { tag: `#${tag}`, color: this.getColorsTagGenerator()[index] };
-      });
-    },
+    onSubmitInputText(event: KeyboardEvent): void {
+      const tag = this.getLastTag();
 
-    getColorsTagGenerator(): string[] {
-      const allColors: string[] = [];
-      const colorsAssigned = new Set();
-      const alltags = this.getAvailableTags;
+      if (event.key === "Enter") {
+        this.originalText = this.inputTextContent.trim();
+        this.arrayOfTags = this.originalText
+          .split(/\s+/)
+          .map((word) => word.trim());
+        this.isTagTextReleased = true;
+        this.inputTextContent = "";
 
-      if (alltags) {
-        for (let index = 0; index < alltags.length; index++) {
-          let colorGenerated = this.generateRandomColor();
-          colorsAssigned.add(colorGenerated);
-
-          if (colorsAssigned.has(colorGenerated)) {
-            colorGenerated = this.generateRandomColor();
-          }
-          allColors.push(colorGenerated);
+        if (tag && this.suggestionOnSearchInput.length === 0) {
+          this.createNewTag(tag);
         }
       }
-
-      return allColors;
     },
 
-    onSearchCreateTags(): void {
-      this.isATagSelected = false;
+    renderColoredWords(word: string) {
+      if (this.isHashtag(word)) {
+        return `<span class="hashtag">${word}</span>`;
+      }
+      return word;
+    },
 
-      this.suggestionOnSearchInput = this.getAvailableTagsWithColors().filter(
-        (item: TagsWithColors) =>
-          item.tag
-            .toLowerCase()
-            .includes(this.tagsToSearchOrCreateString.toLowerCase())
-      );
+    getLastTag(): string {
+      const lastWord = this.inputTextContent.trim().split(" ").pop() ?? "";
+      return lastWord.slice(1);
+    },
+
+    isHashtag(wordTyped: string): boolean {
+      return wordTyped.startsWith("#");
+    },
+
+    onSearchCreateTags(tag: string): void {
+      this.suggestionOnSearchInput = this.getAvailableTags
+        .filter((item: string) =>
+          item.toLowerCase().includes(tag.toLowerCase())
+        )
+        .map((tag: string) => {
+          return `#${tag}`;
+        });
     },
 
     onSelectTag(selectedTag: string): void {
-      this.tagsToSearchOrCreateString = selectedTag;
+      const deconstructuredString = this.inputTextContent.trim().split(" ");
+
+      deconstructuredString[deconstructuredString.length - 1] = selectedTag;
+
+      this.inputTextContent = deconstructuredString.join(" ");
+
       this.suggestionOnSearchInput = [];
-      this.isATagSelected = true;
-    },
-
-    onTagCreated(emittedTagObject: TagCreated): void {
-      !emittedTagObject.isTagCreated
-        ? null
-        : emittedTagObject.tag
-        ? ((this.isTagCreatorEnabled = false),
-          (this.newTagCreated = emittedTagObject.tag),
-          (this.tagsToSearchOrCreateString = ""),
-          this.showTagCreatedTootltip())
-        : null;
-    },
-
-    showTagCreatedTootltip(): void {
-      this.canShowTooltip = true;
-
-      setTimeout(() => {
-        this.canShowTooltip = false;
-      }, 1500);
     },
   },
 
   computed: {
     ...mapGetters(["getAvailableTags"]),
 
-    availabletags(): string[] {
-      return this.getAvailableTags;
+    _isTagExpression(): boolean {
+      const lastWord = this.inputTextContent.trim().split(" ").pop();
+      return lastWord?.startsWith("#") ?? false;
     },
 
-    isAvailableToCreateTag(): boolean {
-      return (
-        this.tagsToSearchOrCreateString !== "" &&
-        this.suggestionOnSearchInput.length <= 0 &&
-        this.isATagSelected === false
-      );
+    availabletags(): string[] {
+      return this.getAvailableTags;
     },
   },
 
   created() {
     this.availabletags;
-    this.getColorsTagGenerator();
-    this.getAvailableTagsWithColors();
   },
 });
 </script>
 <style scoped>
-.textarea-component-class {
-  background-color: rgba(255, 255, 255, 0.75);
-  padding: 0 2rem;
-}
 .textarea-component-class__list {
   background-color: transparent;
 }
-.textarea-component-class__tooltip {
-  left: 50%;
-  top: 70%;
-  transform: translate(-50%, -50%);
+
+.hashtag-component {
   display: flex;
-  justify-self: center;
+  flex-direction: column;
+  align-items: center;
+}
+
+.textarea-component-class {
+  background-color: rgba(255, 255, 255, 0.75);
+  padding: 0 2rem;
+  margin-bottom: 1rem;
+}
+
+.textarea-component-class__textarea {
+  min-height: 100px;
+  padding: 5px;
+  font-size: 16px;
+}
+
+.textarea-component-class__highlightedText {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+}
+
+.hashtag {
+  color: blue;
+  cursor: pointer;
 }
 </style>

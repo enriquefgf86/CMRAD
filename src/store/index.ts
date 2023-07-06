@@ -1,4 +1,4 @@
-import { ManagementState, TagsBySection } from "@/interfaces/interfaces";
+import { ManagementState } from "@/interfaces/interfaces";
 import { createStore } from "vuex";
 
 export default createStore({
@@ -36,18 +36,10 @@ export default createStore({
       "abdominal",
     ],
     tagsCustomList: [],
-    tagsFilteredOnSearch: [],
   } as ManagementState,
 
   getters: {
-    getAvailableTagsBySection(state: ManagementState): TagsBySection {
-      const tagsSectioned: TagsBySection = {
-        custom: state.tagsCustomList,
-        default: state.tagsDefaultList,
-      };
-
-      return tagsSectioned;
-    },
+   
 
     getAvailableTags(state: ManagementState): string[] {
       const allTags: string[] = state.tagsCustomList.concat(
