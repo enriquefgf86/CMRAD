@@ -35,3 +35,7 @@ This is a practical test that implements Vue 3 technologies with Vuex as a state
 Each page has a scoped configuration for styling. Cypress, an open-source end-to-end testing framework, was used to test the functionality of this exercise.
 
 In addition to the repository, you can explore its functionality by downloading it or accessing it through the following link: [cmrad-test-exercise-enrique.netlify.app](https://cmrad-test-excersise-enrique.netlify.app/)
+
+
+### How to proceed in the application
+Once the application is open, enter any data in the input field and press enter. This process will reset the input while simultaneously displaying what the user has typed in a span. It is important to note that if the user writes a word that starts with the special character "#", that word will be displayed in blue color, resembling a hashtag.
